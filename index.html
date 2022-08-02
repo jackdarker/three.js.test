@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+		</style>
+	</head>
+	<body>
+    <p>there should be an object visible</p>
+    <p id="canvas" style='height:100%; width: 100%;'></p>
+    	<!--script src="src/three.min.js"></script-->
+      <script type="importmap">
+        {
+          "imports": {
+            "three": "./node_modules/three/build/three.module.js"
+          }
+        }
+      </script>
+		<script type="module">
+      import * as THREE from 'three';
+      import { OrbitControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js';
+			import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
+			import { RGBELoader } from './node_modules/three/examples/jsm/loaders/RGBELoader.js';
+			const scene = new THREE.Scene();
+			const camera = new THREE.PerspectiveCamera( 75, 400/400, 0.1, 1000 );
+
+			const renderer = new THREE.WebGLRenderer({ antialias: true });
+      const canvas = document.getElementById('canvas')
+
+			//renderer.setSize( window.innerWidth, window.innerHeight );
+			//document.body.appendChild( renderer.domElement );
+      renderer.setSize(400,400 );//canvas.innerWidth, canvas.innerHeight );
+      renderer.setPixelRatio( window.devicePixelRatio );
+      renderer.outputEncoding = THREE.sRGBEncoding;
+			canvas.appendChild( renderer.domElement );
+			const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+			const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+			const cube = new THREE.Mesh( geometry, material );
+			scene.add( cube );
+      cube.position.set(-3,0,0)
+      const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
+      hemiLight.position.set( 0, 20, 0 );
+      scene.add( hemiLight );
+
+      const dirLight = new THREE.DirectionalLight( 0xffffff );
+      dirLight.position.set( 0, 20, 10 );
+      scene.add( dirLight );
+      let dude;
+      const loader = new GLTFLoader();
+				loader.load( 'dude/dude1.gltf', function ( gltf ) {
+          dude=gltf.scene;
+					scene.add( dude );
+          dude.rotation.y=Math.PI;
+          //animate(); //if no requestAnimationFrame
+				}, undefined, function ( e ) {console.error( e );	} );
+
+			camera.position.z = 5,camera.position.y = 2;
+
+			function animate() {
+				requestAnimationFrame( animate );
+				cube.rotation.x += 0.01;
+				cube.rotation.y += 0.01;
+				renderer.render( scene, camera );
+			};
+
+			animate();
+		</script>
+	</body>
+</html>
