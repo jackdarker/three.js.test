@@ -9,6 +9,10 @@
 	</head>
 	<body>
     <p>there should be an object visible</p>
+	<button id="animation.walk">hands up</button>
+	<button id="animation.jump">hands down</button>
+	<button id="noarm">toggle arm</button>
+	<button id="cam">change view</button>
     <p id="canvas" style='height:100%; width: 100%;'></p>
     	<!--script src="src/three.min.js"></script-->
       <script type="importmap">
@@ -19,53 +23,115 @@
         }
       </script>
 		<script type="module">
-      import * as THREE from 'three';
-      import { OrbitControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js';
-			import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
-			import { RGBELoader } from './node_modules/three/examples/jsm/loaders/RGBELoader.js';
-			const scene = new THREE.Scene();
-			const camera = new THREE.PerspectiveCamera( 75, 400/400, 0.1, 1000 );
-
-			const renderer = new THREE.WebGLRenderer({ antialias: true });
-      const canvas = document.getElementById('canvas')
+		import * as THREE from 'three';
+		import { OrbitControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js';
+		import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader.js';
+		import { RGBELoader } from './node_modules/three/examples/jsm/loaders/RGBELoader.js';
+		import { FBXLoader } from './node_modules/three/examples/jsm//loaders/FBXLoader.js';
+		let container, stats, clock, gui,mesh,clips, mixer, actions, activeAction, previousAction;
+		let camera, scene, renderer, model,arm, face;
+		scene = new THREE.Scene();
+		camera = new THREE.PerspectiveCamera( 75, 400/400, 0.1, 1000 );
+		clock = new THREE.Clock();
+		renderer = new THREE.WebGLRenderer({ antialias: true });
+      	const canvas = document.getElementById('canvas')
 
 			//renderer.setSize( window.innerWidth, window.innerHeight );
 			//document.body.appendChild( renderer.domElement );
-      renderer.setSize(400,400 );//canvas.innerWidth, canvas.innerHeight );
-      renderer.setPixelRatio( window.devicePixelRatio );
-      renderer.outputEncoding = THREE.sRGBEncoding;
-			canvas.appendChild( renderer.domElement );
-			const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-			const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-			const cube = new THREE.Mesh( geometry, material );
-			scene.add( cube );
-      cube.position.set(-3,0,0)
-      const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
-      hemiLight.position.set( 0, 20, 0 );
-      scene.add( hemiLight );
+		renderer.setSize(400,400 );//canvas.innerWidth, canvas.innerHeight );
+		renderer.setPixelRatio( window.devicePixelRatio );
+		renderer.outputEncoding = THREE.sRGBEncoding;
+		canvas.appendChild( renderer.domElement );
+		const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+		const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+		const cube = new THREE.Mesh( geometry, material );
+		scene.add( cube );
+		cube.position.set(-3,0,0)
 
-      const dirLight = new THREE.DirectionalLight( 0xffffff );
-      dirLight.position.set( 0, 20, 10 );
-      scene.add( dirLight );
-      let dude;
-      const loader = new GLTFLoader();
-				loader.load( 'dude/dude1.gltf', function ( gltf ) {
-          dude=gltf.scene;
-					scene.add( dude );
-          dude.rotation.y=Math.PI;
-          //animate(); //if no requestAnimationFrame
-				}, undefined, function ( e ) {console.error( e );	} );
-
-			camera.position.z = 5,camera.position.y = 2;
-
-			function animate() {
-				requestAnimationFrame( animate );
-				cube.rotation.x += 0.01;
-				cube.rotation.y += 0.01;
-				renderer.render( scene, camera );
-			};
-
-			animate();
+		//lights
+		const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
+		hemiLight.position.set( 0, 20, 0 );
+		scene.add( hemiLight );
+		const dirLight = new THREE.DirectionalLight( 0xffffff );
+		dirLight.position.set( 0, 20, 10 );
+		scene.add( dirLight );
+		if(true){
+		const loader = new GLTFLoader();
+		loader.load( 'dude/dude1.gltf', function ( object ) {
+			mesh=object.scene;
+			mixer = new THREE.AnimationMixer( mesh );
+			clips = object.animations;
+			mesh.traverse( function ( child ) {
+				//console.log(child);
+				if(child.name==="arm_lower_right") {
+					arm = child;
+				}
+				} );
+			scene.add( mesh );
+			mesh.rotation.y=Math.PI;
+			mixer.addEventListener( 'loop', function( e ) {console.log(e); // properties of e: type, action and loopDelta
+				e.action.paused=true; //stop looping action
+			} ); //looping anims dont fire finished
+			//mixer.addEventListener( 'finished', function( e ) { console.log(e);e.action.paused=true;} ); // properties of e: type, action and direction
+			//togglePose("animation.walk")
+		//animate(); //if no requestAnimationFrame
+			}, undefined, function ( e ) {console.error( e );	} );
+		}else{
+		//////////////////  FBX   //////////////////////////////
+			const loader = new FBXLoader();
+			loader.load( 'cougar/Enuleth.fbx',
+			//Samba Dancing.fbx
+			 function ( object ) {
+				mixer = new THREE.AnimationMixer( object );
+				const action = mixer.clipAction( object.animations[ 0 ] );
+				action.play();
+				object.traverse( function ( child ) {
+				if ( child.isMesh ) {
+						child.castShadow = true;
+						child.receiveShadow = true;
+				}
+				} );
+				scene.add( object );
+				object.scale.set(0.002,0.002,0.002)
+			}, undefined, function ( e ) {console.error( e );	} );
+		}
+		camera.position.z = 5,camera.position.y = 5;
+		function togglePose(pose){
+			// Play a specific animation
+			const clip = THREE.AnimationClip.findByName( clips, pose );
+			//mixer.stopAllAction(); if already running an action
+			const action = mixer.clipAction( clip );
+			action.reset()
+				.setEffectiveTimeScale( 1 )
+				.setEffectiveWeight( 1 )
+				//.setDuration(0)
+				//.fadeIn( 0.2 )
+				.play();
+		}
+		function toggleVisibility(){
+			arm.visible=!arm.visible;
+		}
+		function toggleCam(){
+			if(camera.position.x===0) {
+				camera.position.x=1
+			}else {
+				camera.position.x=0;
+			}
+			camera.lookAt(new THREE.Vector3(0,2,0));
+		}
+		function animate() {
+			const dt = clock.getDelta();
+			cube.rotation.x += 0.01;
+			cube.rotation.y += 0.01;
+			renderer.render( scene, camera );
+			if(mixer) mixer.update( dt );
+			requestAnimationFrame( animate );
+		};
+		animate();
+		document.getElementById('animation.walk').addEventListener('click', function(){togglePose('animation.walk');});
+		document.getElementById('animation.jump').addEventListener('click', function(){togglePose('animation.jump');});
+		document.getElementById('noarm').addEventListener('click', function(){toggleVisibility();});
+		document.getElementById('cam').addEventListener('click', function(){toggleCam();});
 		</script>
 	</body>
 </html>
