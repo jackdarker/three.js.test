@@ -111,24 +111,47 @@ var LZString={_keyStr:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234
 </tw-passagedata>
 <tw-passagedata pid="2" name="TestA" tags="" position="404,319.5" size="100,100">&lt;p&gt;If you dont see a picture below, then you might have opened this page with your filebrowser. But you need to run it on a webserver because CORS restiction only allow to load files via webserver ! The webpage actually imports three.js from a node_module-directory instead of using webpack.&lt;/p&gt;
 	&lt;p&gt;You should see a light red background with a green cube and a character (ram-character JSchlatt by colorbars on Sketchfab).The picture is not a static picture but rendered live via Three.js !&lt;/p&gt;
-	[[Another View|TestB]]&lt;br&gt;[[2Views|TestC]]&lt;br&gt; [[2 Models in 1 view|TestD]]&lt;br&gt; &lt;p id=&quot;canvas&quot;&gt;&lt;/p&gt;
+	[[TestB]]&lt;br&gt;[[2Views|TestC]]&lt;br&gt; [[2 Models in 1 view|TestD]]&lt;br&gt; 
+	&lt;button id=&quot;Camera&quot; &gt;toogle Camera&lt;/button&gt;&lt;p id=&quot;canvas&quot;&gt;&lt;/p&gt;
 	&lt;script&gt;
 		function loaded(){window.three.enterPage();window.three.setupScene(&quot;TestA&quot;,&quot;canvas&quot;);window.three.addModel(&quot;TestA&quot;,&quot;dude/jschlatt.glb&quot;);}
 		if (window.three)  {loaded();}
-		else document.addEventListener("DOMContentLoaded", loaded);&lt;/script&gt;
-	&lt;div&gt;alert(&quot;A&quot;)&lt;/div&gt;</tw-passagedata>
+		else document.addEventListener("DOMContentLoaded", loaded);
+		document.getElementById(&quot;Camera&quot;).addEventListener(&quot;click&quot;, function(){window.three.toogleCam(&quot;TestA&quot;);});
+		&lt;/script&gt;</tw-passagedata>
 <tw-passagedata pid="3" name="TestB" tags="" position="404,470.5" size="100,100">
-	&lt;p&gt;You should see a gray background with a green cube and a character (RobotExpressive from Three.js-examples)&lt;/p&gt;[[TestA]]&lt;p id=&quot;canvas&quot;&gt;&lt;/p&gt;
+	&lt;p&gt;You should see a gray background with a green cube and a character (RobotExpressive from Three.js-examples)&lt;/p&gt;[[TestA]] | [[Pose & Morph|TestB2]]&lt;p id=&quot;canvas&quot;&gt;&lt;/p&gt;
 	&lt;p&gt;If you switch back and forth between the passages, the scene should be reused instead of loading the model and setting up the scene again.&lt;/p&gt;
 	&lt;script&gt;
 		function loaded(){window.three.enterPage();window.three.setupScene(&quot;TestB&quot;,&quot;canvas&quot;);window.three.addModel(&quot;TestB&quot;,&quot;dude/RobotExpressive.glb&quot;);}
 		if (window.three)  {loaded();}
 		else document.addEventListener("DOMContentLoaded", loaded);&lt;/script&gt;</tw-passagedata>
 <tw-passagedata pid="4" name="TestC" tags="" position="404,470.5" size="100,100">
-	&lt;p&gt;This page shows how to render multiple images on a passage. You just have to call setupScene. &lt;/p&gt;[[TestA]]&lt;p id=&quot;canvas&quot;&gt;&lt;/p&gt;&lt;p id=&quot;canvas2&quot;&gt;Here is another view.&lt;/p&gt;
+	&lt;p&gt;This page shows how to render multiple images on a passage. You just have to call setupScene. &lt;/p&gt;
+	&lt;p&gt;WARNING: This doesnt work if you have more then a couple of images as the number of Renderers is limited by the browser !  &lt;/p&gt;
+	[[TestA]]&lt;p id=&quot;canvas&quot;&gt;&lt;/p&gt;&lt;p id=&quot;canvas2&quot;&gt;Here is another view.&lt;/p&gt;&lt;p id=&quot;canvas3&quot;&gt;Another.&lt;/p&gt;
 	&lt;script&gt;
 		function loaded(){window.three.enterPage();window.three.setupScene(&quot;TestC&quot;,&quot;canvas&quot;);window.three.addModel(&quot;TestC&quot;,&quot;dude/RobotExpressive.glb&quot;);
-			window.three.setupScene(&quot;TestC#2&quot;,&quot;canvas2&quot;);window.three.addModel(&quot;TestC#2&quot;,&quot;dude/jschlatt.glb&quot;);}
+			window.three.setupScene(&quot;TestC#2&quot;,&quot;canvas2&quot;);window.three.addModel(&quot;TestC#2&quot;,&quot;dude/jschlatt.glb&quot;);
+			window.three.setupScene(&quot;TestC#3&quot;,&quot;canvas2&quot;);window.three.addModel(&quot;TestC#3&quot;,&quot;dude/jschlatt.glb&quot;);
+			window.three.setupScene(&quot;TestC#4&quot;,&quot;canvas2&quot;);window.three.addModel(&quot;TestC#4&quot;,&quot;dude/jschlatt.glb&quot;);
+			window.three.setupScene(&quot;TestC#5&quot;,&quot;canvas2&quot;);window.three.addModel(&quot;TestC#5&quot;,&quot;dude/jschlatt.glb&quot;);
+			window.three.setupScene(&quot;TestC#6&quot;,&quot;canvas2&quot;);window.three.addModel(&quot;TestC#6&quot;,&quot;dude/jschlatt.glb&quot;);
+			window.three.setupScene(&quot;TestC#7&quot;,&quot;canvas2&quot;);window.three.addModel(&quot;TestC#7&quot;,&quot;dude/jschlatt.glb&quot;);
+			window.three.setupScene(&quot;TestC#8&quot;,&quot;canvas2&quot;);window.three.addModel(&quot;TestC#8&quot;,&quot;dude/RobotExpressive.glb&quot;);
+			window.three.setupScene(&quot;TestC#9&quot;,&quot;canvas2&quot;);window.three.addModel(&quot;TestC#9&quot;,&quot;dude/jschlatt.glb&quot;);
+			window.three.setupScene(&quot;TestC#10&quot;,&quot;canvas2&quot;);window.three.addModel(&quot;TestC#10&quot;,&quot;dude/RobotExpressive.glb&quot;);
+			//If some more are enabled I get weird glitches
+			//window.three.setupScene(&quot;TestC#12&quot;,&quot;canvas3&quot;);window.three.addModel(&quot;TestC#12&quot;,&quot;dude/jschlatt.glb&quot;);
+			//window.three.setupScene(&quot;TestC#13&quot;,&quot;canvas3&quot;);window.three.addModel(&quot;TestC#13&quot;,&quot;dude/jschlatt.glb&quot;);
+			//window.three.setupScene(&quot;TestC#14&quot;,&quot;canvas3&quot;);window.three.addModel(&quot;TestC#14&quot;,&quot;dude/jschlatt.glb&quot;);
+			//window.three.setupScene(&quot;TestC#15&quot;,&quot;canvas3&quot;);window.three.addModel(&quot;TestC#15&quot;,&quot;dude/jschlatt.glb&quot;);
+			//window.three.setupScene(&quot;TestC#16&quot;,&quot;canvas3&quot;);window.three.addModel(&quot;TestC#16&quot;,&quot;dude/jschlatt.glb&quot;);
+			//window.three.setupScene(&quot;TestC#17&quot;,&quot;canvas3&quot;);window.three.addModel(&quot;TestC#17&quot;,&quot;dude/jschlatt.glb&quot;);
+			//window.three.setupScene(&quot;TestC#18&quot;,&quot;canvas3&quot;);window.three.addModel(&quot;TestC#18&quot;,&quot;dude/RobotExpressive.glb&quot;);
+			//window.three.setupScene(&quot;TestC#19&quot;,&quot;canvas3&quot;);window.three.addModel(&quot;TestC#19&quot;,&quot;dude/jschlatt.glb&quot;);
+			//window.three.setupScene(&quot;TestC#20&quot;,&quot;canvas3&quot;);window.three.addModel(&quot;TestC#20&quot;,&quot;dude/RobotExpressive.glb&quot;);
+		}
 		if (window.three)  {loaded();}
 		else document.addEventListener("DOMContentLoaded", loaded);&lt;/script&gt;</tw-passagedata>
 <tw-passagedata pid="5" name="TestD" tags="" position="404,470.5" size="100,100">
@@ -138,6 +161,20 @@ var LZString={_keyStr:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234
 		function loaded(){window.three.enterPage();window.three.setupScene(&quot;TestD&quot;,&quot;canvas&quot;);window.three.addModel(&quot;TestD&quot;,&quot;dude/RobotExpressive.glb&quot;);	window.three.addModel(&quot;TestD&quot;,&quot;dude/jschlatt.glb&quot;);}
 		if (window.three)  {loaded();}
 		else document.addEventListener("DOMContentLoaded", loaded);&lt;/script&gt;</tw-passagedata>
+<tw-passagedata pid="6" name="TestB2" tags="" position="404,470.5" size="100,100">
+	&lt;p&gt;The scene from TestB is reused here and you can switch Pose and Morph. Therefore [[TestB]] will receive the same Pose & Morph. &lt;/p&gt;[[TestA]]
+	&lt;button id=&quot;Running&quot; &gt;Running&lt;/button&gt; &lt;button id=&quot;Standing&quot; &gt;Standing&lt;/button&gt; &lt;br&gt; 
+	&lt;button id=&quot;EmoteAngry&quot; &gt;Angry Face-Morph&lt;/button&gt;&lt;button id=&quot;EmoteNormal&quot; &gt;Normal Face-Morph&lt;/button&gt;
+	&lt;p id=&quot;canvas&quot;&gt;&lt;/p&gt;&lt;p&gt;TODO: the first time you set a morph and then a pose, the morph is reset. Has something to do with creation of action? &lt;/p&gt;
+	&lt;script&gt;
+		function loaded(){window.three.enterPage();window.three.setupScene(&quot;TestB&quot;,&quot;canvas&quot;);}
+		if (window.three)  {loaded();}
+		else document.addEventListener("DOMContentLoaded", loaded);
+		document.getElementById(&quot;Running&quot;).addEventListener(&quot;click&quot;, function(){window.three.setAnimation(&quot;TestB&quot;,&quot;dude/RobotExpressive.glb&quot;,&quot;Running&quot;);});
+		document.getElementById(&quot;Standing&quot;).addEventListener(&quot;click&quot;, function(){window.three.setAnimation(&quot;TestB&quot;,&quot;dude/RobotExpressive.glb&quot;,&quot;Sitting&quot;);});
+		document.getElementById(&quot;EmoteAngry&quot;).addEventListener(&quot;click&quot;, function(){window.three.setMorph(&quot;TestB&quot;,&quot;dude/RobotExpressive.glb&quot;,&quot;Angry&quot;,1.0);});
+		document.getElementById(&quot;EmoteNormal&quot;).addEventListener(&quot;click&quot;, function(){window.three.setMorph(&quot;TestB&quot;,&quot;dude/RobotExpressive.glb&quot;,&quot;Angry&quot;,0.0);});
+		&lt;/script&gt;</tw-passagedata>
 </tw-storydata>
 	<script id="script-sugarcube" type="text/javascript">
 	/*! SugarCube JS */

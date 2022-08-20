@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Local Development</title>
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+      }
+
+      #renderCanvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        font-size: 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <script type="importmap">
+        {
+          "imports": {
+            "babylonjs": "./node_modules/babylonjs/babylon.js",
+            "tslib": "./node_modules/tslib/tslib.es6.js"
+          }
+        }
+      </script>
+    <script  type="module" src="./babylonjsmod.js"></script>
+  </body>
+</html>
