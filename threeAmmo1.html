@@ -13,7 +13,7 @@
 	</head>
 	<body>
 		<div id="container"></div>
-		<div id="info">Ammo.js physics terrain heightfield demo</div>
+		<div id="info">see https://pybullet.org/ for ammojs reference</div>
 
 		<script src="vendor/ammo.wasm.js"></script>
 
@@ -31,10 +31,9 @@
 		<script type="module">
 
 			import * as THREE from 'three';
-
 			import Stats from 'three/addons/libs/stats.module.js';
-
 			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+            import { DragControls } from 'three/addons/controls/DragControls.js';
 
 			// Heightfield parameters
 			const terrainWidthExtents = 100;
@@ -45,11 +44,19 @@
 			const terrainHalfDepth = terrainDepth / 2;
 			const terrainMaxHeight = 8;
 			const terrainMinHeight = - 2;
+            const frustumSize = 100;
 
+
+            //controls
+            const pointer = new THREE.Vector2();
+            let INTERSECTED,cylinder,ball,arrow,ground,controls;
+            let force=false;
+            
 			// Graphics variables
 			let container, stats;
-			let camera, scene, renderer;
+			let camera, scene, renderer,raycaster;
 			let terrainMesh;
+            let toggle=0.0,spheres=[],spheresIndex=0;
 			const clock = new THREE.Clock();
 
 			// Physics variables
@@ -60,6 +67,7 @@
 			let physicsWorld;
 			const dynamicObjects = [];
 			let transformAux1;
+            const margin = 0.05;
 
 			let heightData = null;
 			let ammoHeightData = null;
@@ -67,25 +75,19 @@
 			let time = 0;
 			const objectTimePeriod = 3;
 			let timeNextSpawn = time + objectTimePeriod;
-			const maxNumObjects = 30;
+			const maxNumObjects = 0//30;
 
 			Ammo().then( function ( AmmoLib ) {
-
 				Ammo = AmmoLib;
-
 				init();
 				animate();
-
 			} );
 
 			function init() {
 
 				heightData = generateHeight( terrainWidth, terrainDepth, terrainMinHeight, terrainMaxHeight );
-
 				initGraphics();
-
 				initPhysics();
-
 			}
 
 			function initGraphics() {
@@ -103,33 +105,45 @@
 				stats.domElement.style.top = '0px';
 				container.appendChild( stats.domElement );
 
-				camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.2, 2000 );
-
-				scene = new THREE.Scene();
+                scene = new THREE.Scene();
 				scene.background = new THREE.Color( 0xbfd1e5 );
 
-				camera.position.y = heightData[ terrainHalfWidth + terrainHalfDepth * terrainWidth ] * ( terrainMaxHeight - terrainMinHeight ) + 5;
+				//camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.2, 2000 );
+                const aspect = window.innerWidth / window.innerHeight;
+				camera = new THREE.OrthographicCamera( frustumSize * aspect / - 2, frustumSize * aspect / 2, frustumSize / 2, frustumSize / - 2, 1, 1000 );
+				//camera.position.y = heightData[ terrainHalfWidth + terrainHalfDepth * terrainWidth ] * ( terrainMaxHeight - terrainMinHeight ) + 5;
+				//camera.position.z = terrainDepthExtents / 2;
+                //camera.position.y=terrainMaxHeight*10; //topview
+                camera.position.z=50; //camera.position.x=-50;
+				camera.lookAt( 0, 0, 0 );camera.updateMatrix();
 
-				camera.position.z = terrainDepthExtents / 2;
-				camera.lookAt( 0, 0, 0 );
+				//const controls = new OrbitControls( camera, renderer.domElement );
+				//controls.enableZoom = false;
+                raycaster = new THREE.Raycaster();
+                let geometry = new THREE.CylinderGeometry( 5, 5, 20, 32 );
+                geometry.rotateX( - Math.PI / 2 );
+                let material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+                cylinder = new THREE.Mesh( geometry, material );
+                scene.add( cylinder );
+				
+                /*const sphereGeometry = new THREE.SphereGeometry( 1, 32, 32 );
+				const sphereMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+				for ( let i = 0; i < 40; i ++ ) {
+					const sphere = new THREE.Mesh( sphereGeometry, sphereMaterial );
+					scene.add( sphere );
+					spheres.push( sphere );
+				}*/
+                //controls = new DragControls( [ cylinder ], camera, renderer.domElement ); //
+				//controls.addEventListener( 'drag', render );
 
-				const controls = new OrbitControls( camera, renderer.domElement );
-				controls.enableZoom = false;
-
-				const geometry = new THREE.PlaneGeometry( terrainWidthExtents, terrainDepthExtents, terrainWidth - 1, terrainDepth - 1 );
+				/*geometry = new THREE.PlaneGeometry( terrainWidthExtents, terrainDepthExtents, terrainWidth - 1, terrainDepth - 1 );
 				geometry.rotateX( - Math.PI / 2 );
-
 				const vertices = geometry.attributes.position.array;
-
 				for ( let i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
-
 					// j + 1 because it is the y component that we modify
 					vertices[ j + 1 ] = heightData[ i ];
-
 				}
-
 				geometry.computeVertexNormals();
-
 				const groundMaterial = new THREE.MeshPhongMaterial( { color: 0xC7C7C7 } );
 				terrainMesh = new THREE.Mesh( geometry, groundMaterial );
 				terrainMesh.receiveShadow = true;
@@ -146,10 +160,10 @@
 					groundMaterial.map = texture;
 					groundMaterial.needsUpdate = true;
 
-				} );
+				} );*/
 
-				const light = new THREE.DirectionalLight( 0xffffff, 1 );
-				light.position.set( 100, 100, 50 );
+				const light = new THREE.DirectionalLight( 0xffffff, 0.5 );
+				light.position.set( 30, 0, 150 );
 				light.castShadow = true;
 				const dLight = 200;
 				const sLight = dLight * 0.25;
@@ -157,43 +171,68 @@
 				light.shadow.camera.right = sLight;
 				light.shadow.camera.top = sLight;
 				light.shadow.camera.bottom = - sLight;
-
 				light.shadow.camera.near = dLight / 30;
 				light.shadow.camera.far = dLight;
-
 				light.shadow.mapSize.x = 1024 * 2;
 				light.shadow.mapSize.y = 1024 * 2;
-
 				scene.add( light );
 
-
 				window.addEventListener( 'resize', onWindowResize );
-
+                document.addEventListener( 'pointermove', onPointerMove );
+                document.addEventListener( 'mousedown', onMouseDown );
+                document.addEventListener( 'mouseup', onMouseUp );
+				//window.addEventListener( 'keydown', onKeyDown );
+				//window.addEventListener( 'keyup', onKeyUp );
 			}
+            function onMouseDown( event ) {
+                event.preventDefault();
+                force=true
+                //ball.userData.physicsBody.setGravity(new Ammo.btVector3(1,-10,0));
+                //ball.userData.physicsBody.applyCentralImpulse(new Ammo.btVector3(10,0,0));
+            }
+            function onMouseUp( event ) {
+                event.preventDefault();
+                force=false;
+                //ball.userData.physicsBody.setGravity(new Ammo.btVector3(0,-10,0));
 
+            }
+            function onClick( event ) {
+                event.preventDefault();
+            }
+            function onPointerMove( event ) {
+                pointer.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+                pointer.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+            }
 			function onWindowResize() {
-
-				camera.aspect = window.innerWidth / window.innerHeight;
+				const aspect = window.innerWidth / window.innerHeight;
+				camera.left = - frustumSize * aspect / 2;
+				camera.right = frustumSize * aspect / 2;
+				camera.top = frustumSize / 2;
+				camera.bottom = - frustumSize / 2;
 				camera.updateProjectionMatrix();
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
+				renderer.setSize( window.innerWidth, window.innerHeight )
 			}
 
 			function initPhysics() {
-
 				// Physics configuration
-
 				collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
 				dispatcher = new Ammo.btCollisionDispatcher( collisionConfiguration );
 				broadphase = new Ammo.btDbvtBroadphase();
 				solver = new Ammo.btSequentialImpulseConstraintSolver();
 				physicsWorld = new Ammo.btDiscreteDynamicsWorld( dispatcher, broadphase, solver, collisionConfiguration );
-				physicsWorld.setGravity( new Ammo.btVector3( 0, - 6, 0 ) );
+				physicsWorld.setGravity( new Ammo.btVector3( 0, 0, -10 ) );
 
 				// Create the terrain body
+                const pos = new THREE.Vector3();
+                const quat = new THREE.Quaternion();
 
-				const groundShape = createTerrainShape();
+                // Ground
+                pos.set( 0, 0,- 0.5 );
+                quat.set( 0, 0, 0, 1 );
+                ground = createParalellepiped( 100, 100, 1, 0, pos, quat, new THREE.MeshPhongMaterial( { color: 0xFFFFFF } ) );
+                ground.castShadow = true;
+                ground.receiveShadow = true;
+				/*const groundShape = createTerrainShape();
 				const groundTransform = new Ammo.btTransform();
 				groundTransform.setIdentity();
 				// Shifts the terrain, since bullet re-centers it on its bounding box.
@@ -202,83 +241,101 @@
 				const groundLocalInertia = new Ammo.btVector3( 0, 0, 0 );
 				const groundMotionState = new Ammo.btDefaultMotionState( groundTransform );
 				const groundBody = new Ammo.btRigidBody( new Ammo.btRigidBodyConstructionInfo( groundMass, groundMotionState, groundShape, groundLocalInertia ) );
-				physicsWorld.addRigidBody( groundBody );
-
+				physicsWorld.addRigidBody( groundBody );*/
 				transformAux1 = new Ammo.btTransform();
-
+                generateObject(1);
 			}
 
+            function createParalellepiped( sx, sy, sz, mass, pos, quat, material ) {
+
+                const threeObject = new THREE.Mesh( new THREE.BoxGeometry( sx, sy, sz, 1, 1, 1 ), material );
+                const shape = new Ammo.btBoxShape( new Ammo.btVector3( sx * 0.5, sy * 0.5, sz * 0.5 ) );
+                shape.setMargin( margin );
+
+                createRigidBody( threeObject, shape, mass, pos, quat );
+
+                return threeObject;
+
+            }
+
+            function createRigidBody( threeObject, physicsShape, mass, pos, quat ) {
+
+                threeObject.position.copy( pos );
+                threeObject.quaternion.copy( quat );
+
+                const transform = new Ammo.btTransform();
+                transform.setIdentity();
+                transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+                transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
+                const motionState = new Ammo.btDefaultMotionState( transform );
+
+                const localInertia = new Ammo.btVector3( 0, 0, 0 );
+                physicsShape.calculateLocalInertia( mass, localInertia );
+
+                const rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, physicsShape, localInertia );
+                const body = new Ammo.btRigidBody( rbInfo );
+
+                threeObject.userData.physicsBody = body;
+
+                scene.add( threeObject );
+
+                if ( mass > 0 ) {
+
+                    rigidBodies.push( threeObject );
+
+                    // Disable deactivation
+                    body.setActivationState( 4 );
+
+                }
+
+                physicsWorld.addRigidBody( body );
+
+            }
 			function generateHeight( width, depth, minHeight, maxHeight ) {
-
 				// Generates the height data (a sinus wave)
-
 				const size = width * depth;
 				const data = new Float32Array( size );
-
 				const hRange = maxHeight - minHeight;
 				const w2 = width / 2;
 				const d2 = depth / 2;
 				const phaseMult = 12;
 
 				let p = 0;
-
 				for ( let j = 0; j < depth; j ++ ) {
-
 					for ( let i = 0; i < width; i ++ ) {
-
 						const radius = Math.sqrt(
 							Math.pow( ( i - w2 ) / w2, 2.0 ) +
 								Math.pow( ( j - d2 ) / d2, 2.0 ) );
-
 						const height = ( Math.sin( radius * phaseMult ) + 1 ) * 0.5 * hRange + minHeight;
-
 						data[ p ] = height;
-
 						p ++;
-
 					}
-
 				}
-
 				return data;
-
 			}
 
 			function createTerrainShape() {
-
 				// This parameter is not really used, since we are using PHY_FLOAT height data type and hence it is ignored
 				const heightScale = 1;
-
 				// Up axis = 0 for X, 1 for Y, 2 for Z. Normally 1 = Y is used.
 				const upAxis = 1;
-
 				// hdt, height data type. "PHY_FLOAT" is used. Possible values are "PHY_FLOAT", "PHY_UCHAR", "PHY_SHORT"
 				const hdt = 'PHY_FLOAT';
-
 				// Set this to your needs (inverts the triangles)
 				const flipQuadEdges = false;
-
 				// Creates height data buffer in Ammo heap
 				ammoHeightData = Ammo._malloc( 4 * terrainWidth * terrainDepth );
-
 				// Copy the javascript height data array to the Ammo one.
 				let p = 0;
 				let p2 = 0;
-
 				for ( let j = 0; j < terrainDepth; j ++ ) {
-
 					for ( let i = 0; i < terrainWidth; i ++ ) {
-
 						// write 32-bit float data to memory
 						Ammo.HEAPF32[ ammoHeightData + p2 >> 2 ] = heightData[ p ];
-
 						p ++;
-
 						// 4 bytes/float
 						p2 += 4;
-
 					}
-
 				}
 
 				// Creates the heightfield physics shape
@@ -298,26 +355,18 @@
 				const scaleX = terrainWidthExtents / ( terrainWidth - 1 );
 				const scaleZ = terrainDepthExtents / ( terrainDepth - 1 );
 				heightFieldShape.setLocalScaling( new Ammo.btVector3( scaleX, 1, scaleZ ) );
-
 				heightFieldShape.setMargin( 0.05 );
-
 				return heightFieldShape;
-
 			}
 
-			function generateObject() {
-
+			function generateObject(type) {
 				const numTypes = 4;
-				const objectType = Math.ceil( Math.random() * numTypes );
-
+				const objectType = (type!==null)?type:Math.ceil( Math.random() * numTypes );
 				let threeObject = null;
 				let shape = null;
-
 				const objectSize = 3;
 				const margin = 0.05;
-
 				let radius, height;
-
 				switch ( objectType ) {
 
 					case 1:
@@ -354,9 +403,9 @@
 
 				}
 
-				threeObject.position.set( ( Math.random() - 0.5 ) * terrainWidth * 0.6, terrainMaxHeight + objectSize + 2, ( Math.random() - 0.5 ) * terrainDepth * 0.6 );
+				threeObject.position.set( ( Math.random() - 0.5 ) * terrainWidth * 0.6, terrainMaxHeight + objectSize + 2, 5);//( Math.random() - 0.5 ) * terrainDepth * 0.6 );
 
-				const mass = objectSize * 5;
+				const mass = objectSize * 2;//5;
 				const localInertia = new Ammo.btVector3( 0, 0, 0 );
 				shape.calculateLocalInertia( mass, localInertia );
 				const transform = new Ammo.btTransform();
@@ -368,66 +417,95 @@
 				const body = new Ammo.btRigidBody( rbInfo );
 
 				threeObject.userData.physicsBody = body;
-
 				threeObject.receiveShadow = true;
 				threeObject.castShadow = true;
 
 				scene.add( threeObject );
 				dynamicObjects.push( threeObject );
-
 				physicsWorld.addRigidBody( body );
-
-
-
+                body.setCollisionFlags( body.getCollisionFlags() | Ammo.btCollisionObject.CF_KINEMATIC_OBJECT); 
+                body.setActivationState(4);//(DISABLE_DEACTIVATION);
+                body.setGravity(new Ammo.btVector3( 0, 0, -10 ))
+				body.setFriction(1.0);
+				body.setRollingFriction(1.0);
+				//body.setSpinningFriction(0.1);
+                ball=threeObject;
+				arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0),ball.position,10)
+				arrow.renderOrder=5; //render above ball
+				scene.add(arrow);//ball.attach(arrow)
 			}
 
 			function createObjectMaterial() {
-
 				const c = Math.floor( Math.random() * ( 1 << 24 ) );
 				return new THREE.MeshPhongMaterial( { color: c } );
-
 			}
-
 			function animate() {
-
 				requestAnimationFrame( animate );
-
 				render();
 				stats.update();
-
 			}
-
 			function render() {
-
 				const deltaTime = clock.getDelta();
-
 				if ( dynamicObjects.length < maxNumObjects && time > timeNextSpawn ) {
-
 					generateObject();
 					timeNextSpawn = time + objectTimePeriod;
-
 				}
 
+                raycaster.setFromCamera( pointer, camera );
+                const intersections = raycaster.intersectObjects( [ground], false );
+				const intersection = ( intersections.length ) > 0 ? intersections[ 0 ] : null;
+                if ( intersection !== null ) {
+                    cylinder.position.copy( intersection.point );
+                    if(force){
+                        let _v=new THREE.Vector3()
+						_v.subVectors(cylinder.position,ball.position);//(new Ammo.btVector3(cylinder.position.x,cylinder.position.y,cylinder.position.z));_v=_v.op_sub(ball.position);
+                        _v.normalize();
+						arrow.setDirection(_v);arrow.position.copy(ball.position);
+                        ball.userData.physicsBody.applyCentralImpulse(new Ammo.btVector3(_v.x,_v.y,_v.z));//new Ammo.btVector3(10,0,0));
+                    }
+                    toggle=0;
+                }
+				/*if ( toggle > 0.02 && intersection !== null ) {
+					spheres[ spheresIndex ].position.copy( intersection.point );
+					spheres[ spheresIndex ].scale.set( 1, 1, 1 );
+					spheresIndex = ( spheresIndex + 1 ) % spheres.length;
+					toggle = 0;
+				}
+				for ( let i = 0; i < spheres.length; i ++ ) {
+					const sphere = spheres[ i ];
+					sphere.scale.multiplyScalar( 0.98 );
+					sphere.scale.clampScalar( 0.01, 1 );
+				}*/
+				toggle += clock.getDelta();
+
+                // find intersections
+                /* raycaster.setFromCamera( pointer, camera );
+                const intersects = raycaster.intersectObjects( scene.children, false );
+                if ( intersects.length > 0 ) {
+                    if ( INTERSECTED != intersects[ 0 ].object ) {
+                        if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+                        INTERSECTED = intersects[ 0 ].object;
+                        INTERSECTED.currentHex = INTERSECTED.material.emissive.getHex();
+                        INTERSECTED.material.emissive.setHex( 0xff0000 );
+                    }
+                } else {
+                    if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
+                    INTERSECTED = null;
+                } */
 				updatePhysics( deltaTime );
-
 				renderer.render( scene, camera );
-
 				time += deltaTime;
-
 			}
 
 			function updatePhysics( deltaTime ) {
 
 				physicsWorld.stepSimulation( deltaTime, 10 );
-
 				// Update objects
 				for ( let i = 0, il = dynamicObjects.length; i < il; i ++ ) {
-
 					const objThree = dynamicObjects[ i ];
 					const objPhys = objThree.userData.physicsBody;
 					const ms = objPhys.getMotionState();
 					if ( ms ) {
-
 						ms.getWorldTransform( transformAux1 );
 						const p = transformAux1.getOrigin();
 						const q = transformAux1.getRotation();
@@ -435,11 +513,8 @@
 						objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
 
 					}
-
 				}
-
 			}
-
 		</script>
 
 	</body>
